@@ -1,0 +1,63 @@
+# ▶ Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ▶ Environment files (sensibile, variabile de configurare)
+.env
+.env.local
+.env.*.local
+
+# ▶ Logs generate de aplicație
+logs/
+*.log
+logs/*.log
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ▶ Cache Node
+.cache/
+.tmp/
+
+# ▶ Mac / Windows generated files
+.DS_Store
+Thumbs.db
+
+# ▶ Build output (pentru frontend React, dacă îl adaugi)
+build/
+dist/
+
+# ▶ Editor/IDE configs
+.vscode/
+.idea/
+
+# ▶ Kubernetes config personal (NU îl pui niciodată în Git!)
+.kube/
+kubeconfig
+config
+
+# ▶ Docker crap (dacă faci imagini, exclude layere locale)
+**/.docker/*
+docker-compose.override.yml
+
+# ▶ Minikube (nu ai ce să cauți cu minikube în Git)
+.minikube/
+
+# ▶ Argo CD auto-generated files (later când vei deploya)
+manifests-generated/
+chart/generated/
+
+# ▶ Temp files
+*.swp
+*.swo
+*.tmp
+*.temp
+
+# ▶ Coverage (dacă folosești Jest)
+coverage/
+
+# ▶ Lock file (opțional dacă folosești doar npm)
+package-lock.json
