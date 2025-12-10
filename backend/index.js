@@ -19,7 +19,7 @@ if (process.env.KUBERNETES_SERVICE_HOST) {
 }
 
 const appsApi = kc.makeApiClient(k8s.AppsV1Api);
-const coreApi = kc.makeApiClient(k8s.CoreV1Api); // dacă vrei namespaces etc.
+const coreApi = kc.makeApiClient(k8s.CoreV1Api);
 
 // helper: cum identificăm „aplicația” după label-uri
 function getAppInstance(labels = {}) {
@@ -33,12 +33,63 @@ function getAppInstance(labels = {}) {
 
 // ================== ENDPOINTS ==================
 
+// ================== PODS ==================
+// listează pods dintr-un namespace
+app.get('/api/pods', async (req, res) => {
+  try {
+    console.log('--- /api/pods CALLED ---');
+    console.log('raw url:', req.url);
+    console.log('req.query =', req.query);
+
+    let namespace = 'default';
+    if (
+      typeof req.query.namespace === 'string' &&
+      req.query.namespace.trim() !== ''
+    ) {
+      namespace = req.query.namespace.trim();
+    }
+
+    console.log('>>> using namespace =', namespace);
+
+    const resp = await coreApi.listNamespacedPod({ namespace });
+    const items = resp.items ?? resp.body?.items ?? [];
+
+    console.log('K8s API call OK, pods:', items.length);
+
+    const pods = items.map(p => {
+      const containers = p.spec?.containers || [];
+      const containerInfos = containers.map(c => ({
+        name: c.name,
+        image: c.image,
+      }));
+
+      return {
+        name: p.metadata?.name,
+        namespace: p.metadata?.namespace,
+        phase: p.status?.phase || '',
+        nodeName: p.spec?.nodeName || '',
+        podIP: p.status?.podIP || '',
+        startTime: p.status?.startTime || '',
+        containers: containerInfos,
+      };
+    });
+
+    res.json(pods);
+  } catch (err) {
+    console.error('Error listing pods:', err.body || err.message || err);
+    res
+      .status(500)
+      .json({ error: err.body || err.message || 'Error listing pods' });
+  }
+});
+
+
 // healthcheck simplu
 app.get('/api/health', (req, res) => {
   res.json({ status: 'backend merge!', k8sConfigured: true });
 });
 
-// (opțional) listează toate namespace-urile – îți poate prinde bine în UI
+// listează toate namespace-urile – îți poate prinde bine în UI
 app.get('/api/namespaces', async (req, res) => {
   try {
     console.log('--- /api/namespaces CALLED ---');
@@ -51,10 +102,13 @@ app.get('/api/namespaces', async (req, res) => {
     res.json(namespaces);
   } catch (err) {
     console.error('Error listing namespaces:', err.body || err.message || err);
-    res.status(500).json({ error: err.body || err.message || 'Error listing namespaces' });
+    res
+      .status(500)
+      .json({ error: err.body || err.message || 'Error listing namespaces' });
   }
 });
 
+// ================== DEPLOYMENTS ==================
 // listează deployments dintr-un namespace
 app.get('/api/deployments', async (req, res) => {
   try {
@@ -63,7 +117,10 @@ app.get('/api/deployments', async (req, res) => {
     console.log('req.query =', req.query);
 
     let namespace = 'default';
-    if (typeof req.query.namespace === 'string' && req.query.namespace.trim() !== '') {
+    if (
+      typeof req.query.namespace === 'string' &&
+      req.query.namespace.trim() !== ''
+    ) {
       namespace = req.query.namespace.trim();
     }
 
@@ -72,23 +129,86 @@ app.get('/api/deployments', async (req, res) => {
     const resp = await appsApi.listNamespacedDeployment({ namespace });
     const items = resp.items ?? resp.body?.items ?? [];
 
-    console.log('K8s API call OK, items:', items.length);
+    console.log('K8s API call OK, deployments:', items.length);
 
-    const deployments = items.map(d => ({
-      name: d.metadata?.name,
-      namespace: d.metadata?.namespace,
-      replicas: d.spec?.replicas || 0,
-      availableReplicas: d.status?.availableReplicas || 0,
-    }));
+    const deployments = items.map(d => {
+      const containers =
+        d.spec?.template?.spec?.containers || [];
+      const images = containers
+        .map(c => c.image)
+        .filter(Boolean);
+
+      return {
+        name: d.metadata?.name,
+        namespace: d.metadata?.namespace,
+        replicas: d.spec?.replicas || 0,
+        availableReplicas: d.status?.availableReplicas || 0,
+        images,
+      };
+    });
 
     res.json(deployments);
   } catch (err) {
     console.error('Error listing deployments:', err.body || err.message || err);
-    res.status(500).json({ error: err.body || err.message || 'Error listing deployments' });
+    res
+      .status(500)
+      .json({ error: err.body || err.message || 'Error listing deployments' });
   }
 });
 
-// listează „apps” dintr-un namespace (grupare după label de app)
+// ================== STATEFULSETS ==================
+// listează statefulset-urile dintr-un namespace
+app.get('/api/statefulsets', async (req, res) => {
+  try {
+    console.log('--- /api/statefulsets CALLED ---');
+    console.log('raw url:', req.url);
+    console.log('req.query =', req.query);
+
+    let namespace = 'default';
+    if (
+      typeof req.query.namespace === 'string' &&
+      req.query.namespace.trim() !== ''
+    ) {
+      namespace = req.query.namespace.trim();
+    }
+
+    console.log('>>> using namespace =', namespace);
+
+    const resp = await appsApi.listNamespacedStatefulSet({ namespace });
+    const items = resp.items ?? resp.body?.items ?? [];
+
+    console.log('K8s API call OK, statefulsets:', items.length);
+
+    const statefulsets = items.map(s => {
+      const containers =
+        s.spec?.template?.spec?.containers || [];
+      const images = containers
+        .map(c => c.image)
+        .filter(Boolean);
+
+      return {
+        name: s.metadata?.name,
+        namespace: s.metadata?.namespace,
+        replicas: s.spec?.replicas || 0,
+        // la statefulset „available” = readyReplicas
+        availableReplicas: s.status?.readyReplicas || 0,
+        images,
+      };
+    });
+
+    res.json(statefulsets);
+  } catch (err) {
+    console.error(
+      'Error listing statefulsets:',
+      err.body || err.message || err
+    );
+    res
+      .status(500)
+      .json({ error: err.body || err.message || 'Error listing statefulsets' });
+  }
+});
+
+// ================== APPS (grupare după label de app) ==================
 app.get('/api/apps', async (req, res) => {
   try {
     console.log('--- /api/apps CALLED ---');
@@ -100,7 +220,6 @@ app.get('/api/apps', async (req, res) => {
       });
     }
 
-    // luăm deployments + statefulsets din namespace-ul ăsta
     const [deployResp, stsResp] = await Promise.all([
       appsApi.listNamespacedDeployment({ namespace }),
       appsApi.listNamespacedStatefulSet({ namespace }),
@@ -112,47 +231,47 @@ app.get('/api/apps', async (req, res) => {
     const appMap = new Map();
 
     function add(kind, obj) {
-  const labels = obj.metadata?.labels || {};
-  const app = getAppInstance(labels);
-  if (!app) return;
+      const labels = obj.metadata?.labels || {};
+      const app = getAppInstance(labels);
+      if (!app) return;
 
-  if (!appMap.has(app)) {
-    appMap.set(app, {
-      appName: app,
-      namespace,
-      deployments: [],
-      statefulsets: [],
-      resourceCount: 0,
-    });
-  }
+      if (!appMap.has(app)) {
+        appMap.set(app, {
+          appName: app,
+          namespace,
+          deployments: [],
+          statefulsets: [],
+          resourceCount: 0,
+        });
+      }
 
-  const entry = appMap.get(app);
+      const entry = appMap.get(app);
 
-  // 🔹 extragem imaginea din containers
-  const containers = obj.spec?.template?.spec?.containers || [];
-  const images = containers.map(c => c.image).filter(Boolean);
-  const image = images[0] || null; // prima imagine (cel mai des ai un singur container)
+      const containers =
+        obj.spec?.template?.spec?.containers || [];
+      const images = containers
+        .map(c => c.image)
+        .filter(Boolean);
+      const image = images[0] || null;
 
-  const base = {
-    kind,
-    name: obj.metadata?.name,
-    namespace,
-    replicas: obj.spec?.replicas || 0,
-    ready:
-      obj.status?.readyReplicas ??
-      obj.status?.availableReplicas ??
-      0,
-    image,            // 🔥 adăugat
-    // dacă vrei și toate imaginile:
-    // images,
-  };
+      const base = {
+        kind,
+        name: obj.metadata?.name,
+        namespace,
+        replicas: obj.spec?.replicas || 0,
+        ready:
+          obj.status?.readyReplicas ??
+          obj.status?.availableReplicas ??
+          0,
+        image,
+        // images, // dacă vrei și lista completă
+      };
 
-  if (kind === 'Deployment') entry.deployments.push(base);
-  if (kind === 'StatefulSet') entry.statefulsets.push(base);
+      if (kind === 'Deployment') entry.deployments.push(base);
+      if (kind === 'StatefulSet') entry.statefulsets.push(base);
 
-  entry.resourceCount++;
-}
-
+      entry.resourceCount++;
+    }
 
     deployments.forEach(d => add('Deployment', d));
     statefulsets.forEach(s => add('StatefulSet', s));
@@ -161,20 +280,34 @@ app.get('/api/apps', async (req, res) => {
     res.json(apps);
   } catch (err) {
     console.error('Error listing apps:', err.body || err.message || err);
-    res.status(500).json({ error: err.body || err.message || 'Error listing apps' });
+    res
+      .status(500)
+      .json({ error: err.body || err.message || 'Error listing apps' });
   }
 });
 
-// scaling: resursă individuală sau toată aplicația
+// ================== SCALING (single resource sau app) ==================
 app.post('/api/scale', async (req, res) => {
   try {
-    const { namespace = 'default', name, kind, appName, replicas } = req.body || {};
+    const {
+      namespace = 'default',
+      name,
+      kind,
+      appName,
+      replicas,
+    } = req.body || {};
 
     console.log('--- /api/scale CALLED ---');
     console.log('body =', req.body);
 
-    if (replicas === undefined || replicas === null || isNaN(Number(replicas))) {
-      return res.status(400).json({ error: 'Missing or invalid field: replicas' });
+    if (
+      replicas === undefined ||
+      replicas === null ||
+      isNaN(Number(replicas))
+    ) {
+      return res
+        .status(400)
+        .json({ error: 'Missing or invalid field: replicas' });
     }
 
     const ns = namespace || 'default';
@@ -186,8 +319,13 @@ app.post('/api/scale', async (req, res) => {
       }
 
       if (kind === 'StatefulSet') {
-        console.log(`Scaling StatefulSet ${name} in ns=${namespace} to ${desiredReplicas}`);
-        const currentResp = await appsApi.readNamespacedStatefulSet({ name, namespace });
+        console.log(
+          `Scaling StatefulSet ${name} in ns=${namespace} to ${desiredReplicas}`
+        );
+        const currentResp = await appsApi.readNamespacedStatefulSet({
+          name,
+          namespace,
+        });
         const ss = currentResp.body ?? currentResp;
         ss.spec = ss.spec || {};
         ss.spec.replicas = desiredReplicas;
@@ -205,8 +343,13 @@ app.post('/api/scale', async (req, res) => {
           replicas: updated?.spec?.replicas ?? desiredReplicas,
         };
       } else {
-        console.log(`Scaling Deployment ${name} in ns=${namespace} to ${desiredReplicas}`);
-        const currentResp = await appsApi.readNamespacedDeployment({ name, namespace });
+        console.log(
+          `Scaling Deployment ${name} in ns=${namespace} to ${desiredReplicas}`
+        );
+        const currentResp = await appsApi.readNamespacedDeployment({
+          name,
+          namespace,
+        });
         const dep = currentResp.body ?? currentResp;
         dep.spec = dep.spec || {};
         dep.spec.replicas = desiredReplicas;
@@ -234,14 +377,17 @@ app.post('/api/scale', async (req, res) => {
 
     // CAZ 2: scale toată aplicația (toate workloads cu același appName)
     if (appName) {
-      console.log(`Scaling entire app "${appName}" in ns=${ns} to ${desiredReplicas}`);
+      console.log(
+        `Scaling entire app "${appName}" in ns=${ns} to ${desiredReplicas}`
+      );
 
       const [deployResp, stsResp] = await Promise.all([
         appsApi.listNamespacedDeployment({ namespace: ns }),
         appsApi.listNamespacedStatefulSet({ namespace: ns }),
       ]);
 
-      const deployItems = deployResp.items ?? deployResp.body?.items ?? [];
+      const deployItems =
+        deployResp.items ?? deployResp.body?.items ?? [];
       const stsItems = stsResp.items ?? stsResp.body?.items ?? [];
 
       const workloadsToScale = [];
@@ -249,14 +395,22 @@ app.post('/api/scale', async (req, res) => {
       deployItems.forEach(d => {
         const labels = d.metadata?.labels || {};
         if (getAppInstance(labels) === appName) {
-          workloadsToScale.push({ kind: 'Deployment', name: d.metadata?.name, namespace: ns });
+          workloadsToScale.push({
+            kind: 'Deployment',
+            name: d.metadata?.name,
+            namespace: ns,
+          });
         }
       });
 
       stsItems.forEach(s => {
         const labels = s.metadata?.labels || {};
         if (getAppInstance(labels) === appName) {
-          workloadsToScale.push({ kind: 'StatefulSet', name: s.metadata?.name, namespace: ns });
+          workloadsToScale.push({
+            kind: 'StatefulSet',
+            name: s.metadata?.name,
+            namespace: ns,
+          });
         }
       });
 
@@ -286,7 +440,9 @@ app.post('/api/scale', async (req, res) => {
     });
   } catch (err) {
     console.error('Error scaling workloads:', err.body || err.message || err);
-    res.status(500).json({ error: err.body || err.message || 'Error scaling workloads' });
+    res
+      .status(500)
+      .json({ error: err.body || err.message || 'Error scaling workloads' });
   }
 });
 
