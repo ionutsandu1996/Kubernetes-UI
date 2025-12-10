@@ -1,63 +1,73 @@
-# ▶ Node.js dependencies
+# ============================
+# Node.js / Backend
+# ============================
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+.pnpm-store/
 
-# ▶ Environment files (sensibile, variabile de configurare)
+# Environment configs (sensibile)
 .env
 .env.local
-.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# ▶ Logs generate de aplicație
-logs/
+# Logs
 *.log
-logs/*.log
-pids/
+logs/
+debug.log
 *.pid
 *.seed
 *.pid.lock
 
-# ▶ Cache Node
+# Cache & temp
 .cache/
 .tmp/
+temp/
+tmp/
 
-# ▶ Mac / Windows generated files
+# ============================
+# Kubernetes / Minikube
+# ============================
+.kube/
+.kubeconfig
+config
+.minikube/
+
+# NU uploada kubeconfig-ul local niciodată!
+# Fără certificate personale în Git.
+
+# ============================
+# Docker junk
+# ============================
+**/.docker
+docker-compose.override.yml
+
+# ============================
+# Frontend (React, Vite, Next etc.)
+# ============================
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# ============================
+# Editor / IDE
+# ============================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS garbage
 .DS_Store
 Thumbs.db
 
-# ▶ Build output (pentru frontend React, dacă îl adaugi)
-build/
-dist/
-
-# ▶ Editor/IDE configs
-.vscode/
-.idea/
-
-# ▶ Kubernetes config personal (NU îl pui niciodată în Git!)
-.kube/
-kubeconfig
-config
-
-# ▶ Docker crap (dacă faci imagini, exclude layere locale)
-**/.docker/*
-docker-compose.override.yml
-
-# ▶ Minikube (nu ai ce să cauți cu minikube în Git)
-.minikube/
-
-# ▶ Argo CD auto-generated files (later când vei deploya)
-manifests-generated/
-chart/generated/
-
-# ▶ Temp files
-*.swp
-*.swo
-*.tmp
-*.temp
-
-# ▶ Coverage (dacă folosești Jest)
-coverage/
-
-# ▶ Lock file (opțional dacă folosești doar npm)
-package-lock.json
+# ============================
+# Storybook, tests, bundling, misc
+# ============================
+storybook-static/
+*.tgz
