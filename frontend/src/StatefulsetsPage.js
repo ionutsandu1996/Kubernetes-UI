@@ -59,7 +59,14 @@ function StatefulsetsPage({ namespace }) {
 
   useEffect(() => {
     loadStatefulsets();
-    const id = setInterval(loadStatefulsets, 10000); // auto-refresh 10 sec
+
+    // auto-refresh la 10 secunde doar dacă tab-ul este vizibil
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadStatefulsets();
+      }
+    }, 10000);
+
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namespace]);
@@ -67,10 +74,9 @@ function StatefulsetsPage({ namespace }) {
   return (
     <div>
       <div className="page-header">
-  <h1>Statefulsets</h1>
-  <span className="ns-badge">{namespace}</span>
-</div>
-
+        <h1>Statefulsets</h1>
+        <span className="ns-badge">{namespace}</span>
+      </div>
 
       {loading && <p>Loading statefulsets...</p>}
       {error && <p className="error">Error: {error}</p>}
@@ -92,37 +98,49 @@ function StatefulsetsPage({ namespace }) {
             </tr>
           </thead>
           <tbody>
-            {items.map((obj) => (
-              <tr key={`${obj.namespace}-${obj.name}`}>
-                <td>{obj.name}</td>
-                <td>{obj.namespace}</td>
-                <td>
-                  {obj.images && obj.images.length > 0 ? (
-                    <ul>
-                      {obj.images.map((img) => (
-                        <li key={img}>{img}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <em>no images</em>
-                  )}
-                </td>
-                <td>{obj.replicas}</td>
-                <td>{obj.availableReplicas}</td>
-                <td>
-                  <button
-                    onClick={() => changeReplicas(obj, obj.replicas - 1)}
-                  >
-                    -
-                  </button>
-                  <button
-                    onClick={() => changeReplicas(obj, obj.replicas + 1)}
-                  >
-                    +
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {items.map((obj) => {
+              const unhealthy =
+                (obj.availableReplicas || 0) < (obj.replicas || 0);
+
+              return (
+                <tr
+                  key={`${obj.namespace}-${obj.name}`}
+                  className={unhealthy ? "row-warn" : ""}
+                >
+                  <td>{obj.name}</td>
+                  <td>{obj.namespace}</td>
+                  <td>
+                    {obj.images && obj.images.length > 0 ? (
+                      <ul>
+                        {obj.images.map((img) => (
+                          <li key={img}>{img}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <em>no images</em>
+                    )}
+                  </td>
+                  <td>{obj.replicas}</td>
+                  <td>{obj.availableReplicas}</td>
+                  <td>
+                    <button
+                      onClick={() =>
+                        changeReplicas(obj, (obj.replicas || 0) - 1)
+                      }
+                    >
+                      -
+                    </button>
+                    <button
+                      onClick={() =>
+                        changeReplicas(obj, (obj.replicas || 0) + 1)
+                      }
+                    >
+                      +
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}

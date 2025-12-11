@@ -3,7 +3,7 @@ import "./App.css";
 import PodsPage from "./PodsPage";
 import DeploymentsPage from "./DeploymentsPage";
 import StatefulsetsPage from "./StatefulsetsPage";
-import SettingsPage from "./SettingsPage";
+// import SettingsPage from "./SettingsPage"; // 🔧 dezactivat
 
 export const BACKEND_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:3001";
@@ -13,7 +13,9 @@ const NAMESPACES = ["default", "actimize-actone"];
 
 function App() {
   const [namespace, setNamespace] = useState("default");
-  const [selectedTab, setSelectedTab] = useState("pods"); // pods | deployments | statefulsets | settings
+  const [selectedTab, setSelectedTab] = useState("pods"); 
+  // tabs valide: pods | deployments | statefulsets
+  // (settings scos temporar)
 
   let content = null;
   if (selectedTab === "pods") {
@@ -22,9 +24,10 @@ function App() {
     content = <DeploymentsPage namespace={namespace} />;
   } else if (selectedTab === "statefulsets") {
     content = <StatefulsetsPage namespace={namespace} />;
-  } else if (selectedTab === "settings") {
-    content = <SettingsPage namespace={namespace} />;
   }
+  // else if (selectedTab === "settings") {
+  //   content = <SettingsPage namespace={namespace} />;
+  // }
 
   return (
     <div className="app-layout">
@@ -64,6 +67,7 @@ function App() {
               <span className="menu-icon">📦</span>
               Pods
             </button>
+
             <button
               className={
                 selectedTab === "deployments"
@@ -75,6 +79,7 @@ function App() {
               <span className="menu-icon">🚀</span>
               Deployments
             </button>
+
             <button
               className={
                 selectedTab === "statefulsets"
@@ -90,6 +95,7 @@ function App() {
         </div>
 
         <div className="sidebar-bottom">
+          {/* 🔧 Settings scos temporar 
           <button
             className={
               selectedTab === "settings" ? "menu-item active" : "menu-item"
@@ -99,6 +105,7 @@ function App() {
             <span className="menu-icon">⚙️</span>
             Settings
           </button>
+          */}
         </div>
       </aside>
 

@@ -59,14 +59,24 @@ function DeploymentsPage({ namespace }) {
 
   useEffect(() => {
     loadDeployments();
-    const id = setInterval(loadDeployments, 10000); // auto-refresh 10 sec
+
+    // auto-refresh la 10 secunde (poți adăuga și verificare de visibility dacă vrei)
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadDeployments();
+      }
+    }, 10000);
+
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namespace]);
 
   return (
     <div>
-      <h1>Deployments in namespace "{namespace}"</h1>
+      <div className="page-header">
+        <h1>Deployments</h1>
+        <span className="ns-badge">{namespace}</span>
+      </div>
 
       {loading && <p>Loading deployments...</p>}
       {error && <p className="error">Error: {error}</p>}
@@ -88,37 +98,49 @@ function DeploymentsPage({ namespace }) {
             </tr>
           </thead>
           <tbody>
-            {deployments.map((dep) => (
-              <tr key={`${dep.namespace}-${dep.name}`}>
-                <td>{dep.name}</td>
-                <td>{dep.namespace}</td>
-                <td>
-                  {dep.images && dep.images.length > 0 ? (
-                    <ul>
-                      {dep.images.map((img) => (
-                        <li key={img}>{img}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <em>no images</em>
-                  )}
-                </td>
-                <td>{dep.replicas}</td>
-                <td>{dep.availableReplicas}</td>
-                <td>
-                  <button
-                    onClick={() => changeReplicas(dep, dep.replicas - 1)}
-                  >
-                    -
-                  </button>
-                  <button
-                    onClick={() => changeReplicas(dep, dep.replicas + 1)}
-                  >
-                    +
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {deployments.map((dep) => {
+              const unhealthy =
+                (dep.availableReplicas || 0) < (dep.replicas || 0);
+
+              return (
+                <tr
+                  key={`${dep.namespace}-${dep.name}`}
+                  className={unhealthy ? "row-warn" : ""}
+                >
+                  <td>{dep.name}</td>
+                  <td>{dep.namespace}</td>
+                  <td>
+                    {dep.images && dep.images.length > 0 ? (
+                      <ul>
+                        {dep.images.map((img) => (
+                          <li key={img}>{img}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <em>no images</em>
+                    )}
+                  </td>
+                  <td>{dep.replicas}</td>
+                  <td>{dep.availableReplicas}</td>
+                  <td>
+                    <button
+                      onClick={() =>
+                        changeReplicas(dep, (dep.replicas || 0) - 1)
+                      }
+                    >
+                      -
+                    </button>
+                    <button
+                      onClick={() =>
+                        changeReplicas(dep, (dep.replicas || 0) + 1)
+                      }
+                    >
+                      +
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}

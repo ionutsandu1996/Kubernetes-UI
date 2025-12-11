@@ -451,3 +451,22 @@ ul {
   font-size: 13px;
   color: #555;
 }
+
+
+/* Running → verde */
+.row-ok {
+  background-color: #e7fbe7;     /* verde pal */
+  color: #0f5132;                /* verde închis */
+}
+
+/* Pending / Unknown → galben */
+.row-warn {
+  background-color: #fff9db;     /* galben pal */
+  color: #664d03;                /* galben închis/orange */
+}
+
+/* Failed / CrashLoopBackOff → roșu */
+.row-bad {
+  background-color: #fde2e1;     /* roșu pal */
+  color: #842029;                /* roșu închis */
+}

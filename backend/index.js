@@ -83,6 +83,39 @@ app.get('/api/pods', async (req, res) => {
   }
 });
 
+// ================== POD RESTART ==================
+// "Restart" = delete pod -> controller-ul îl recreează
+app.post('/api/pods/restart', async (req, res) => {
+  try {
+    const { namespace = 'default', name } = req.body || {};
+
+    console.log('--- /api/pods/restart CALLED ---');
+    console.log('body =', req.body);
+
+    if (!name) {
+      return res.status(400).json({ error: 'Missing field: name' });
+    }
+
+    const ns = namespace || 'default';
+
+    // deleteNamespacedPod: dacă e controlat de un controller, revine singur
+    await coreApi.deleteNamespacedPod({ name, namespace: ns });
+
+    return res.json({
+      status: 'deleted',
+      name,
+      namespace: ns,
+      message:
+        'Pod deleted. If it belongs to a Deployment/StatefulSet, it will be recreated automatically.',
+    });
+  } catch (err) {
+    console.error('Error restarting pod:', err.body || err.message || err);
+    res
+      .status(500)
+      .json({ error: err.body || err.message || 'Error restarting pod' });
+  }
+});
+
 
 // healthcheck simplu
 app.get('/api/health', (req, res) => {
