@@ -1,0 +1,21 @@
+namespace: default
+
+backend:
+  image: "ionutsandu96/k8s-ui-backend:latest"
+  replicaCount: 1
+
+frontend:
+  image: "ionutsandu96/k8s-ui-frontend:latest"
+  replicaCount: 1
+  serviceType: LoadBalancer    # <- important
+  loadBalancerIP: ""
+
+ingress:
+  enabled: false
+  host: "k8s-ui.local"
+  className: ""
+
+teamNamespaces:
+  - default
+  - actimize-actone
+  - actimize-ifmx

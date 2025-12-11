@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-ui-backend-config
+  labels:
+    app: k8s-ui-backend
+data:
+  TEAM_NAMESPACES: {{ join "," .Values.teamNamespaces | quote }}

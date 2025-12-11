@@ -126,11 +126,32 @@ app.get('/api/health', (req, res) => {
 app.get('/api/namespaces', async (req, res) => {
   try {
     console.log('--- /api/namespaces CALLED ---');
+
+    const cfg = process.env.TEAM_NAMESPACES;
+    if (cfg && cfg.trim() !== "") {
+      // folosim lista din config/env
+      const names = cfg
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      console.log('Using TEAM_NAMESPACES from env:', names);
+      return res.json(
+        names.map(name => ({
+          name,
+          status: 'Configured',
+          source: 'config',
+        }))
+      );
+    }
+
+    // fallback: luăm din cluster (dacă ai și drepturi pentru list ns)
     const resp = await coreApi.listNamespace({});
     const items = resp.items ?? resp.body?.items ?? [];
     const namespaces = items.map(ns => ({
       name: ns.metadata?.name,
       status: ns.status?.phase,
+      source: 'cluster',
     }));
     res.json(namespaces);
   } catch (err) {

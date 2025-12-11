@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-ui-backend
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: k8s-ui-backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: k8s-ui-backend
+  template:
+    metadata:
+      labels:
+        app: k8s-ui-backend
+    spec:
+      serviceAccountName: k8s-ui-backend-sa
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          env:
+            - name: TEAM_NAMESPACES
+              valueFrom:
+                configMapKeyRef:
+                  name: k8s-ui-backend-config
+                  key: TEAM_NAMESPACES
+            - name: NODE_ENV
+              value: "production"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            initialDelaySeconds: 10

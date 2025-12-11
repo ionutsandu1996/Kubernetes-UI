@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-ui-frontend
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: k8s-ui-frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      app: k8s-ui-frontend
+  template:
+    metadata:
+      labels:
+        app: k8s-ui-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80

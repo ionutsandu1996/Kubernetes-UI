@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: k8s-ui-backend-role
+  namespace: default
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/exec", "configmaps"]
+    verbs: ["get", "list", "watch", "delete"]
+
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch", "update", "patch"]
