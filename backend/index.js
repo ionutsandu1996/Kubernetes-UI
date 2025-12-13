@@ -123,44 +123,38 @@ app.get('/api/health', (req, res) => {
 });
 
 // listează toate namespace-urile – îți poate prinde bine în UI
-app.get('/api/namespaces', async (req, res) => {
-  try {
-    console.log('--- /api/namespaces CALLED ---');
+app.get('/api/namespaces', (req, res) => {
+  console.log('--- /api/namespaces CALLED ---');
 
-    const cfg = process.env.TEAM_NAMESPACES;
-    if (cfg && cfg.trim() !== "") {
-      // folosim lista din config/env
-      const names = cfg
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean);
+  const cfg = process.env.TEAM_NAMESPACES;
+  console.log('process.env.TEAM_NAMESPACES =', cfg);
 
-      console.log('Using TEAM_NAMESPACES from env:', names);
-      return res.json(
-        names.map(name => ({
-          name,
-          status: 'Configured',
-          source: 'config',
-        }))
-      );
-    }
-
-    // fallback: luăm din cluster (dacă ai și drepturi pentru list ns)
-    const resp = await coreApi.listNamespace({});
-    const items = resp.items ?? resp.body?.items ?? [];
-    const namespaces = items.map(ns => ({
-      name: ns.metadata?.name,
-      status: ns.status?.phase,
-      source: 'cluster',
-    }));
-    res.json(namespaces);
-  } catch (err) {
-    console.error('Error listing namespaces:', err.body || err.message || err);
-    res
-      .status(500)
-      .json({ error: err.body || err.message || 'Error listing namespaces' });
+  if (!cfg || !cfg.trim()) {
+    return res.status(500).json({
+      error: 'TEAM_NAMESPACES is not configured in environment',
+    });
   }
+
+  const names = cfg
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (names.length === 0) {
+    return res.status(500).json({
+      error: 'TEAM_NAMESPACES is empty after parsing',
+    });
+  }
+
+  const result = names.map((name) => ({
+    name,
+    status: 'Configured',
+    source: 'config',
+  }));
+
+  return res.json(result);
 });
+
 
 // ================== DEPLOYMENTS ==================
 // listează deployments dintr-un namespace
