@@ -12,7 +12,7 @@ function StatefulsetsPage({ namespace }) {
 
     try {
       const res = await fetch(
-        `${BACKEND_URL}/api/statefulsets?namespace=${encodeURIComponent(
+        `/api/statefulsets?namespace=${encodeURIComponent(
           namespace
         )}`
       );
@@ -35,7 +35,7 @@ function StatefulsetsPage({ namespace }) {
     if (newReplicas < 0) return;
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/scale`, {
+      const res = await fetch(`/api/scale`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

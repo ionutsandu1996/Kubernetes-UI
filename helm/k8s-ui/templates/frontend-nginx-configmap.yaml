@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-ui-frontend-nginx
+  namespace: default
+data:
+  default.conf: |
+    server {
+      listen 80;
+
+      # React build
+      root /usr/share/nginx/html;
+      index index.html;
+
+      # API -> backend service
+      location /api/ {
+        proxy_pass http://k8s-ui-backend:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+      }
+
+      # SPA routing
+      location / {
+        try_files $uri /index.html;
+      }
+    }

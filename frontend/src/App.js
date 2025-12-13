@@ -22,7 +22,7 @@ function App() {
   useEffect(() => {
     const loadNamespaces = async () => {
       try {
-        const res = await fetch(`${BACKEND_URL}/api/namespaces`);
+        const res = await fetch(`/api/namespaces`);
         const data = await res.json();
 
         const list = data.map((ns) => ns.name);

@@ -14,7 +14,7 @@ function PodsPage({ namespace }) {
 
     try {
       const res = await fetch(
-        `${BACKEND_URL}/api/pods?namespace=${encodeURIComponent(namespace)}`
+        `/api/pods?namespace=${encodeURIComponent(namespace)}`
       );
 
       if (!res.ok) {
@@ -41,7 +41,7 @@ function PodsPage({ namespace }) {
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/pods/restart`, {
+      const res = await fetch(`/api/pods/restart`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
